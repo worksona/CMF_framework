@@ -152,19 +152,34 @@ with tab3:
 # Tab 4: View Logs
 with tab4:
     st.header("View Logs")
-    log_type = st.selectbox("Select Log Type", ["Skill Tasks", "Milestones", "Reflections"])
+    log_type = st.selectbox("Select Log Type", ["Skill Tasks", "Milestones", "Reflections", "View All Logs"])
     
     try:
-        if log_type == "Skill Tasks":
-            data = safe_read_json(SKILL_LOG_FILE)
-        elif log_type == "Milestones":
-            data = safe_read_json(MILESTONE_LOG_FILE)
-        else:  # Reflections
-            data = safe_read_json(REFLECTION_LOG_FILE)
-        
-        if data:
-            st.json(data)
+        if log_type == "View All Logs":
+            # Combine all logs with type labels
+            skill_data = [{"type": "Skill Task", **entry} for entry in safe_read_json(SKILL_LOG_FILE)]
+            milestone_data = [{"type": "Milestone", **entry} for entry in safe_read_json(MILESTONE_LOG_FILE)]
+            reflection_data = [{"type": "Reflection", **entry} for entry in safe_read_json(REFLECTION_LOG_FILE)]
+            
+            all_data = skill_data + milestone_data + reflection_data
+            # Sort by timestamp/date (accounting for different field names)
+            all_data.sort(key=lambda x: x.get("timestamp", x.get("date")), reverse=True)
+            
+            if all_data:
+                st.json(all_data)
+            else:
+                st.info("No logs found.")
         else:
-            st.info("No logs found.")
+            if log_type == "Skill Tasks":
+                data = safe_read_json(SKILL_LOG_FILE)
+            elif log_type == "Milestones":
+                data = safe_read_json(MILESTONE_LOG_FILE)
+            else:  # Reflections
+                data = safe_read_json(REFLECTION_LOG_FILE)
+            
+            if data:
+                st.json(data)
+            else:
+                st.info("No logs found.")
     except Exception as e:
         st.error(f"Error loading logs: {str(e)}")
